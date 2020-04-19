@@ -1,0 +1,98 @@
+#' Fit peak estimation model for COVID-19 (Corona Virus) data
+#'
+#' @param data Data frame whihc must contains date information and at least one of cumulative cases or number of cases per date
+#' @param n_cases Character variable: name of number of cases column on data
+#' @param cum_cases Character variable: name of cumulative cases column on data
+#' @param date_var Character variable: name date variable column on data
+#' @param init_pars Numeric of length 3: initial parameters for optimization. See Details
+#' @param weights Numeric of length 3: weights for optimization. Recomended that sum of weights must be 1. See Details
+#' @param lim_inf Numeric of length 3 (optional): inferior limit for parameters
+#' @import ggplot2
+#'
+#' @return A list containing
+#' \enumerate{
+#'   \item \code{plot}: A \code{ggplot2} plot showing the model fit
+#'   \item \code{pars}: Estimated parameters for peak estimation model
+#'   \item \code{parsSE}: Standard errors of estimated parameters via observed Hessian
+#'   \item \code{pred}: A data frame containing the predicted values
+#' }
+#'
+#' @details
+#'
+#' The model suppose that the cumulative cases \eqn{f(t)} along time \eqn{t} can be written as a logistic function:
+#'
+#' \deqn{f(t ; \Phi) = [\phi_1]/[1 + \exp( (\phi_2 - t)/(\phi_3) )],}
+#'
+#' with \eqn{\phi_1,\phi_2,\phi_3} as model parameters, described as:
+#'
+#' \enumerate{
+#'   \item \eqn{\phi_1}: number of maximum cumulative cases.
+#'   \item \eqn{\phi_2}: time \eqn{t_0} where \eqn{f'(t_0)} is maximum.
+#'   \item \eqn{\phi_3}: Number of cases increase rate.
+#' }
+#'
+#' Given a set of weights \eqn{(w_1,w_2,w_3)}, parameters are estimated by minimizing the following objective function:
+#'
+#' \deqn{S(\Phi ; w_1,w_2,w_3) = w_1\sum (f(t;\Phi) - d_0(t))^2 +w_2 \sum (f'(t ;\Phi) - d_1(t))^2 +w_3\sum (f''(t;\Phi) - d_2(t))^2.}
+#'
+#' Weights are defined by users according to model fit to data. If the number of cases have poor fit, \eqn{w_2} should be increased.
+#'
+#' @export
+#'
+#' @examples
+#' fit <- covid19peakfit(data = korea_covid19,
+#'                       cum_cases = "cum_cases",
+#'                       date_var = "date",
+#'                       init_pars = c(10000, 30, 1),
+#'                       weights = c(.01,.01,.98))
+#'
+#' fit$plot
+#' future(fit, n_fut=20)
+covid19peakfit <- function(data,
+                           n_cases=NULL,
+                           cum_cases=NULL,
+                           date_var,
+                           init_pars,
+                           weights= c(.1,.1,.1),
+                           lim_inf =c(0,0,0)){
+
+  data <- prep_data(data=data,
+                    num_cases=n_cases,
+                    cum_cases=cum_cases,
+                    date_var=date_var)
+
+  opt =optim(par = init_pars,
+             fn = obj_function,
+             data = data,
+             weights = weights,
+             lower = lim_inf,
+             method = "L-BFGS-B",
+             hessian=TRUE)
+
+  dd_pred = data
+  days <- seq_along(dd_pred$date)
+  dd_pred$pred_d1 = d1f(days,opt$par)
+  dd_pred$pred_d2 = d2f(days,opt$par)
+  dd_pred$pred_cum = d0f(days,opt$par)
+
+  dd_pred = data.frame(date = rep(dd_pred$date,times=3),
+                       var = factor(rep(c("Cumulative (d0)",
+                                   "Num. Cases (d1)",
+                                   "Diff. Cases (d2)"),
+                                 each=length(days)),
+                                 levels = c("Cumulative (d0)",
+                                   "Num. Cases (d1)",
+                                   "Diff. Cases (d2)")),
+                       observed = c(dd_pred$cum_cases,dd_pred$num_cases,dd_pred$d2),
+                       estimated = c(dd_pred$pred_cum,dd_pred$pred_d1, dd_pred$pred_d2))
+  p = dd_pred %>%
+    ggplot(aes(data,observed))+
+    geom_point(alpha=.3)+
+    geom_line(aes(y=estimated))+
+    facet_grid(var~., scales="free_y")
+
+  list("plot"=p,
+       "pars" = opt$par ,
+       "pred" = dd_pred,
+       "parsSE" = sqrt(abs(diag(solve(opt$hessian)))))
+}

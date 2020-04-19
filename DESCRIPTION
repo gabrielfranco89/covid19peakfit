@@ -1,0 +1,18 @@
+Package: covid19peakfit
+Title: What the Package Does (One Line, Title Case)
+Version: 0.0.1
+Authors@R: 
+    person(given = "Gabriel",
+           family = "Franco",
+           role = c("aut", "cre"),
+           email = "gabrielfranco89@gmail.com")
+Description: Fit a peak estimation model for COVID-19 (Corona Virus)
+Depends: R (>= 3.1.0)
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+ByteCompile: true
+Suggests: 
+    usethis,
+    testthat
+RoxygenNote: 7.0.2
