@@ -20,7 +20,7 @@ visu <- function(data, useData = TRUE){
                                  levels=c("Cumulative (d0)",
                                  "Confirmed (d1)",
                                  "Diff. Conf. (d2)")),
-                     observed = c(data$casosAcumulados,data$d1,data$d2))
+                     observed = c(data$cum_cases,data$num_cases,data$d2))
   data %>%
     ggplot(aes(data,observed))+
     geom_point()+
@@ -53,12 +53,12 @@ future <- function(optObj, n_fut=30){
                          ),
                          days = rep(daysfut,3))
   dd_append[["date"]] =  max(optObj$pred$date)+seq_along(daysfut)
-  dd_pred[["Dado"]] = "Observado"
-  dd_append[["Dado"]] = "Predito"
+  dd_pred[["Data"]] = "Observado"
+  dd_append[["Data"]] = "Predito"
   pred_br = rbind(dd_pred,dd_append)
   pred_br %>%
     as.data.frame() %>%
-    ggplot(aes(date,observed,col=Dado)) +
+    ggplot(aes(date,observed,col=Data)) +
     geom_point(alpha=.3) +
     geom_line(aes(y=estimated)) +
     facet_grid(var~., scales="free_y")

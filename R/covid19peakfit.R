@@ -8,6 +8,7 @@
 #' @param weights Numeric of length 3: weights for optimization. Recomended that sum of weights must be 1. See Details
 #' @param lim_inf Numeric of length 3 (optional): inferior limit for parameters
 #' @import ggplot2
+#' @import magrittr
 #'
 #' @return A list containing
 #' \enumerate{
@@ -86,7 +87,7 @@ covid19peakfit <- function(data,
                        observed = c(dd_pred$cum_cases,dd_pred$num_cases,dd_pred$d2),
                        estimated = c(dd_pred$pred_cum,dd_pred$pred_d1, dd_pred$pred_d2))
   p = dd_pred %>%
-    ggplot(aes(data,observed))+
+    ggplot(aes(date,observed))+
     geom_point(alpha=.3)+
     geom_line(aes(y=estimated))+
     facet_grid(var~., scales="free_y")
