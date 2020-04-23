@@ -16,3 +16,6 @@ Suggests:
     usethis,
     testthat
 RoxygenNote: 7.0.2
+Imports: 
+    ggplot2,
+    magrittr
