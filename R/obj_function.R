@@ -1,3 +1,12 @@
+#' Objective function to be minimized
+#'
+#' @param pars Numeric vector of length 3
+#' @param data Data frame
+#' @param weights Function weights
+#'
+#' @return
+#'
+#' @examples
 obj_function <- function(pars,
                          data,
                          weights){
